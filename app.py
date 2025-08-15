@@ -1,22 +1,11 @@
 import streamlit as st
-import easyocr
-import cv2
-import numpy as np
 from PIL import Image
+import pytesseract
 
 # 🎯 App title and description
-st.set_page_config(page_title="EasyOCR Text Recognition", layout="centered")
-st.title("📝 EasyOCR Text Recognition App")
-st.markdown("Upload an image and select a language to extract text using EasyOCR.")
-
-# 🌐 Language selection
-languages = {
-    "English": "en", "French": "fr", "German": "de", "Spanish": "es",
-    "Italian": "it", "Portuguese": "pt", "Chinese": "zh", "Japanese": "ja", "Russian": "ru",
-    "Hindi": "hi", "Arabic": "ar", "Bengali": "bn", "Urdu": "ur"
-}
-selected_language = st.selectbox("Select Language:", list(languages.keys()))
-lang_code = languages[selected_language]
+st.set_page_config(page_title="Tesseract OCR App", layout="centered")
+st.title("📝 Tesseract OCR Text Recognition")
+st.markdown("Upload an image to extract text using Tesseract OCR.")
 
 # 📤 Image upload
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
@@ -27,19 +16,14 @@ if uploaded_file:
         image = Image.open(uploaded_file).convert("RGB")
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
-        # 🔄 Convert to NumPy array
-        image_np = np.array(image)
-
-        # 🔍 OCR reader
+        # 🔍 OCR
         with st.spinner("Running OCR..."):
-            reader = easyocr.Reader([lang_code], gpu=False)
-            result = reader.readtext(image_np)
+            extracted_text = pytesseract.image_to_string(image)
 
         # 📄 Display results
-        if result:
+        if extracted_text.strip():
             st.subheader("📌 Extracted Text:")
-            for bbox, text, confidence in result:
-                st.markdown(f"- **{text}** (Confidence: `{confidence:.2f}`)")
+            st.text_area("Text Output", extracted_text, height=300)
         else:
             st.warning("No text found in the image.")
 
