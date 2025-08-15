@@ -1,38 +1,55 @@
+import os
 import streamlit as st
 import easyocr
 import cv2
 import numpy as np
 from PIL import Image
 
-# Set the title of the app
-st.title("EasyOCR Text Recognition App")
+# 🛠️ Ensure correct OpenCV version (for Streamlit Cloud)
+os.system("pip uninstall -y opencv-python-headless")
+os.system("pip install opencv-python==4.5.5.64")
 
-# Language selection
-languages = ["en", "fr", "de", "es", "it", "pt", "zh", "ja", "ru"]  # List more languages as needed
-selected_language = st.selectbox("Select Language:", languages)
+# 🎯 App title and description
+st.set_page_config(page_title="EasyOCR Text Recognition", layout="centered")
+st.title("📝 EasyOCR Text Recognition App")
+st.markdown("Upload an image and select a language to extract text using EasyOCR.")
 
-# Upload an image
+# 🌐 Language selection
+languages = {
+    "English": "en", "French": "fr", "German": "de", "Spanish": "es",
+    "Italian": "it", "Portuguese": "pt", "Chinese": "zh", "Japanese": "ja", "Russian": "ru",
+    "Hindi": "hi", "Arabic": "ar", "Bengali": "bn", "Urdu": "ur"
+}
+selected_language = st.selectbox("Select Language:", list(languages.keys()))
+lang_code = languages[selected_language]
+
+# 📤 Image upload
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
-if uploaded_file is not None:
-    # Load the image
-    image = Image.open(uploaded_file)
-    st.image(image, caption='Uploaded Image', use_column_width=True)
+if uploaded_file:
+    try:
+        # 🖼️ Load and display image
+        image = Image.open(uploaded_file).convert("RGB")
+        st.image(image, caption="Uploaded Image", use_column_width=True)
 
-    # Convert the image to a format suitable for EasyOCR
-    image_np = np.array(image)
+        # 🔄 Convert to NumPy array
+        image_np = np.array(image)
 
-    # Create an EasyOCR reader instance with the selected language
-    reader = easyocr.Reader([selected_language])
+        # 🔍 OCR reader
+        with st.spinner("Running OCR..."):
+            reader = easyocr.Reader([lang_code], gpu=False)
+            result = reader.readtext(image_np)
 
-    # Perform OCR on the image
-    st.write("Recognizing text...")
-    result = reader.readtext(image_np)
+        # 📄 Display results
+        if result:
+            st.subheader("📌 Extracted Text:")
+            for bbox, text, confidence in result:
+                st.markdown(f"- **{text}** (Confidence: `{confidence:.2f}`)")
+        else:
+            st.warning("No text found in the image.")
 
-    # Extract and display recognized text
-    if result:
-        extracted_text = "\n".join([text[1] for text in result])
-        st.subheader("Extracted Text:")
-        st.write(extracted_text)
-    else:
-        st.write("No text found.")
+    except Exception as e:
+        st.error(f"⚠️ OCR failed: {e}")
+else:
+    st.info("Please upload an image to begin.")
+
