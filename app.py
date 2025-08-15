@@ -8,7 +8,7 @@ from docx import Document
 # 🎯 App title and description
 st.set_page_config(page_title="Tesseract OCR App", layout="centered")
 st.title("📝 Tesseract OCR Text Recognition")
-st.markdown("Upload an image to extract text using Tesseract OCR with confidence scores.")
+st.markdown("Upload an image to extract text using Tesseract OCR. Confidence scores are shown for review but not exported.")
 
 # 📤 Image upload
 uploaded_file = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
@@ -37,10 +37,15 @@ if uploaded_file:
         if extracted_lines:
             st.subheader("📌 Extracted Text with Confidence:")
             for row in extracted_lines:
-                st.markdown(f"- **{row['Text']}** (Confidence: `{row['Confidence']:.2f}`)")
+                conf_display = f"{row['Confidence']:.2f}"
+                if row['Confidence'] < 60:
+                    st.markdown(f"<span style='color:red'>⚠️ {row['Text']} (Confidence: {conf_display})</span>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"- **{row['Text']}** (Confidence: `{conf_display}`)")
 
-            # Convert to DataFrame
-            df = pd.DataFrame(extracted_lines)
+            # Prepare exportable text only
+            export_lines = [{"Text": row["Text"]} for row in extracted_lines]
+            df = pd.DataFrame(export_lines)
 
             # 📥 Export as CSV
             csv = df.to_csv(index=False).encode("utf-8")
@@ -55,8 +60,8 @@ if uploaded_file:
             # 📥 Export as DOCX
             doc = Document()
             doc.add_heading("Extracted OCR Text", level=1)
-            for row in extracted_lines:
-                doc.add_paragraph(f"{row['Text']} (Confidence: {row['Confidence']:.2f})")
+            for row in export_lines:
+                doc.add_paragraph(row["Text"])
             doc_buffer = BytesIO()
             doc.save(doc_buffer)
             st.download_button("📥 Download DOCX", doc_buffer.getvalue(), "ocr_output.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
