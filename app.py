@@ -1,13 +1,8 @@
-import os
 import streamlit as st
 import easyocr
 import cv2
 import numpy as np
 from PIL import Image
-
-# 🛠️ Ensure correct OpenCV version (for Streamlit Cloud)
-os.system("pip uninstall -y opencv-python-headless")
-os.system("pip install opencv-python==4.5.5.64")
 
 # 🎯 App title and description
 st.set_page_config(page_title="EasyOCR Text Recognition", layout="centered")
@@ -52,4 +47,3 @@ if uploaded_file:
         st.error(f"⚠️ OCR failed: {e}")
 else:
     st.info("Please upload an image to begin.")
-
